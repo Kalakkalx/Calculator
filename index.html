@@ -1,196 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modest Calculator Pro</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modest Calculator</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234f6bfb'/%3E%3Crect x='16' y='12' width='32' height='40' rx='6' fill='white' opacity='.95'/%3E%3Crect x='20' y='18' width='24' height='10' rx='3' fill='%234f6bfb'/%3E%3Ccircle cx='24' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='32' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='40' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='24' cy='44' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='32' cy='44' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='40' cy='44' r='3' fill='%234f6bfb'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Optimized Cursor Glow -->
-  <div class="cursor-glow" id="cursorGlow"></div>
-
-  <!-- Ambient Background Typography & Shapes with Animation -->
-  <div class="bg-symbol symbol-1">%</div>
-  <div class="bg-symbol symbol-2">+</div>
-  <div class="bg-symbol symbol-3">÷</div>
-  <div class="bg-symbol symbol-4">8</div>
-  <div class="bg-symbol symbol-5">0</div>
-  
-  <div class="bg-circle circle-1"></div>
-  <div class="bg-circle circle-2"></div>
-
-  <!-- Toast Notification (Bottom Right for Desktop) -->
-  <div id="toast" class="toast">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-    <span id="toastText">Copied to clipboard</span>
+  <!-- decorative floating background shapes -->
+  <div class="bg-decor" aria-hidden="true">
+    <span class="blob blob-a"></span>
+    <span class="blob blob-b"></span>
+    <span class="blob blob-c"></span>
+    <span class="shape shape-dot"></span>
+    <span class="shape shape-plus">+</span>
+    <span class="shape shape-percent">%</span>
+    <span class="shape shape-eq">=</span>
   </div>
 
-  <div class="app fade-in" id="app">
-    <!-- Top Header -->
+  <div class="app" id="app">
+
     <header class="app-header">
-      <div class="header-left">
-        <div class="app-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4" y="2" width="16" height="20" rx="3"/>
-            <line x1="8" y1="6" x2="16" y2="6"/>
-            <line x1="8" y1="10" x2="10" y2="10"/>
-            <line x1="14" y1="10" x2="16" y2="10"/>
-            <line x1="8" y1="14" x2="10" y2="14"/>
-            <line x1="14" y1="14" x2="16" y2="14"/>
-            <line x1="8" y1="18" x2="12" y2="18"/>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="4" y="2.5" width="16" height="19" rx="3"/>
+            <path d="M7.5 6.5h9" stroke-width="2"/>
+            <circle cx="8" cy="12" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="16" cy="12" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="8" cy="16" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="12" cy="16" r="1.1" fill="currentColor" stroke="none"/>
+            <circle cx="16" cy="16" r="1.1" fill="currentColor" stroke="none"/>
           </svg>
-        </div>
-        <span class="app-title">Modest Calculator <span class="pro-badge">PRO</span></span>
+        </span>
+        <span class="brand-name">Modest Calculator</span>
       </div>
 
-      <nav class="mode-switch" id="modeSwitch" role="tablist">
-        <button class="mode-btn is-active" data-mode="calc" role="tab">Calculator</button>
-        <button class="mode-btn" data-mode="template" role="tab">% Change</button>
-        <span class="mode-thumb"></span>
+      <nav class="mode-switch" role="tablist" aria-label="Calculator mode">
+        <button class="mode-btn is-active" data-mode="calc" role="tab" aria-selected="true">Calculator</button>
+        <button class="mode-btn" data-mode="template" role="tab" aria-selected="false">% Change</button>
+        <span class="mode-thumb" aria-hidden="true"></span>
       </nav>
 
-      <div class="header-right">
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode (Ctrl+T)" title="Toggle Dark Mode (Ctrl+T)">
-          <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4l1.4-1.4M17 7l1.4-1.4"/></svg>
+      <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" aria-pressed="false" aria-label="Toggle dark mode (Ctrl+D)">
+          <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="4.2"/>
+            <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7"/>
+          </svg>
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5Z"/>
+          </svg>
         </button>
-        <div class="window-controls">
-          <button class="win-btn win-min" aria-label="Minimize" title="Minimize"></button>
-          <button class="win-btn win-max" aria-label="Maximize" title="Fullscreen (F11)"></button>
-          <button class="win-btn win-close" aria-label="Close" title="Close"></button>
-        </div>
       </div>
     </header>
 
-    <div class="dashboard">
-      <!-- ===================== STANDARD CALCULATOR ===================== -->
-      <section class="panel calc-panel is-active" id="calcPanel">
-        <div class="calc-body">
+    <!-- ===================== STANDARD CALCULATOR ===================== -->
+    <section class="panel calc-panel is-active" id="calcPanel" aria-hidden="false">
+      <div class="calc-body">
+        <div class="calc-core">
           <div class="display">
-            <button class="history-toggle-btn glass-btn" id="historyToggleBtn" aria-label="Toggle History (Ctrl+H)" title="Toggle History (Ctrl+H)">
-               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            </button>
-            <div class="display-expr-container" id="exprContainer">
-              <div class="display-expr" id="calcExpr">&nbsp;</div>
-            </div>
-            <div class="display-value" id="calcValue">0</div>
+            <div class="display-expr" id="calcExpr">&nbsp;</div>
+            <div class="display-value" id="calcValue" title="Ctrl+C to copy">0</div>
           </div>
 
           <div class="keys">
-            <!-- Row 1 -->
-            <button class="key key-fn fn-purple ripple-btn" data-action="clear-entry" tabindex="0">CE</button>
-            <button class="key key-fn fn-purple ripple-btn" data-action="clear" tabindex="0">C</button>
-            <button class="key key-fn fn-purple ripple-btn" data-action="backspace" tabindex="0">⌫</button>
-            <button class="key key-op ripple-btn" data-action="percent" tabindex="0">%</button>
+            <button class="key key-fn" data-action="ce" title="Backspace clears entry, Esc clears all">CE</button>
+            <button class="key key-fn" data-action="clear" title="Esc / Ctrl+L">C</button>
+            <button class="key key-fn" data-action="backspace" title="Backspace">⌫</button>
+            <button class="key key-fn" data-action="percent" title="%">%</button>
 
-            <!-- Row 2 -->
-            <button class="key key-num ripple-btn" data-num="7" tabindex="0">7</button>
-            <button class="key key-num ripple-btn" data-num="8" tabindex="0">8</button>
-            <button class="key key-num ripple-btn" data-num="9" tabindex="0">9</button>
-            <button class="key key-op ripple-btn" data-action="op" data-op="÷" tabindex="0">÷</button>
+            <button class="key key-num" data-num="7" title="Key: 7">7</button>
+            <button class="key key-num" data-num="8" title="Key: 8">8</button>
+            <button class="key key-num" data-num="9" title="Key: 9">9</button>
+            <button class="key key-op key-op--div" data-action="op" data-op="÷" title="Key: /">÷</button>
 
-            <!-- Row 3 -->
-            <button class="key key-num ripple-btn" data-num="4" tabindex="0">4</button>
-            <button class="key key-num ripple-btn" data-num="5" tabindex="0">5</button>
-            <button class="key key-num ripple-btn" data-num="6" tabindex="0">6</button>
-            <button class="key key-op ripple-btn" data-action="op" data-op="×" tabindex="0">×</button>
+            <button class="key key-num" data-num="4" title="Key: 4">4</button>
+            <button class="key key-num" data-num="5" title="Key: 5">5</button>
+            <button class="key key-num" data-num="6" title="Key: 6">6</button>
+            <button class="key key-op key-op--mul" data-action="op" data-op="×" title="Key: *">×</button>
 
-            <!-- Row 4 -->
-            <button class="key key-num ripple-btn" data-num="1" tabindex="0">1</button>
-            <button class="key key-num ripple-btn" data-num="2" tabindex="0">2</button>
-            <button class="key key-num ripple-btn" data-num="3" tabindex="0">3</button>
-            <button class="key key-op ripple-btn" data-action="op" data-op="−" tabindex="0">−</button>
+            <button class="key key-num" data-num="1" title="Key: 1">1</button>
+            <button class="key key-num" data-num="2" title="Key: 2">2</button>
+            <button class="key key-num" data-num="3" title="Key: 3">3</button>
+            <button class="key key-op key-op--sub" data-action="op" data-op="−" title="Key: -">−</button>
 
-            <!-- Row 5 -->
-            <button class="key key-fn fn-purple ripple-btn" data-action="negate" tabindex="0">+/-</button>
-            <button class="key key-num ripple-btn" data-num="0" tabindex="0">0</button>
-            <button class="key key-num ripple-btn" data-action="decimal" tabindex="0">.</button>
-            <button class="key key-op ripple-btn" data-action="op" data-op="+" tabindex="0">+</button>
-            
-            <!-- Row 6 -->
-            <button class="key key-eq ripple-btn" data-action="equals" tabindex="0">
-              <span class="eq-lines">══════════════</span>
-              <span class="eq-symbol">=</span>
-              <span class="eq-lines">══════════════</span>
+            <button class="key key-fn" data-action="negate" title="+/-">+/-</button>
+            <button class="key key-num" data-num="0" title="Key: 0">0</button>
+            <button class="key key-num" data-action="decimal" title="Key: .">.</button>
+            <button class="key key-op key-op--add" data-action="op" data-op="+" title="Key: +">+</button>
+
+            <button class="key key-eq" data-action="equals" title="Enter">=</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== % CHANGE TEMPLATE ===================== -->
+    <section class="panel template-panel" id="templatePanel" aria-hidden="true">
+
+      <div class="field-grid">
+        <div class="field field--original">
+          <label class="field-label" for="originalInput">Enter original value</label>
+          <input class="field-input" id="originalInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+        </div>
+
+        <div class="field field--final">
+          <label class="field-label" for="finalInput">Enter final value</label>
+          <input class="field-input" id="finalInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+        </div>
+
+        <div class="field field--base">
+          <label class="field-label" for="baseInput">Base <span class="field-sub">(resets to 100)</span></label>
+          <input class="field-input" id="baseInput" type="text" inputmode="decimal" autocomplete="off" value="100">
+          <div class="field-hint" id="baseHint"></div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">Difference <span class="stat-formula">original − final</span></div>
+          <div class="result-row">
+            <div class="stat-value" id="diffValue" title="Ctrl+Shift+C to copy">0</div>
+            <button class="copy-btn copy-btn--sm" id="diffCopyBtn" type="button" title="Copy difference">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="8.5" y="8.5" width="11" height="11" rx="2"/>
+                <path d="M4.5 15.5V6.2A1.7 1.7 0 0 1 6.2 4.5h9.3"/>
+              </svg>
             </button>
           </div>
         </div>
 
-        <aside class="history-panel" id="historyPanel">
-          <div class="history-head">
-            <input type="text" id="historySearch" placeholder="Search history & timestamps..." class="history-search" autocomplete="off">
-            <div class="history-actions-group">
-              <button class="text-btn" id="historyExportCsv" title="Export as CSV">CSV</button>
-              <button class="text-btn" id="historyExportTxt" title="Export as TXT">TXT</button>
-              <button class="text-btn text-danger" id="historyClear">Clear All</button>
-            </div>
-            <button class="close-history-btn" id="closeHistoryBtn" aria-label="Close History">✕</button>
+        <div class="stat-card stat-card--result">
+          <div class="stat-label-row">
+            <div class="stat-label" id="resultLabel">% Change <span class="stat-formula" id="resultFormula">((original − final) / original) × base</span></div>
+            <span class="status-badge" id="statusBadge" hidden></span>
           </div>
-          <ul class="history-list" id="historyList">
-            <li class="history-empty" id="historyEmpty">No calculations yet</li>
-          </ul>
-        </aside>
-      </section>
-
-      <!-- ===================== % CHANGE TEMPLATE ===================== -->
-      <section class="panel template-panel" id="templatePanel">
-        <div class="template-header">
-          <h2>Percentage Change Calculator</h2>
-          <div class="template-tip">Tip: Press Enter to move between inputs</div>
-        </div>
-
-        <div class="field-grid">
-          <div class="field field-blue">
-            <div class="input-wrapper">
-              <input class="field-input" id="originalInput" type="text" tabindex="1" autocomplete="off" placeholder=" ">
-              <label class="field-label" for="originalInput">ENTER ORIGINAL VALUE</label>
-              <svg class="input-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3v18h18v-2H5V3H3zm6 14h2v-6H9v6zm4 0h2V9h-2v8zm4 0h2V5h-2v12z"/></svg>
-            </div>
-          </div>
-
-          <div class="field field-green">
-            <div class="input-wrapper">
-              <input class="field-input" id="finalInput" type="text" tabindex="2" autocomplete="off" placeholder=" ">
-              <label class="field-label" for="finalInput">ENTER FINAL VALUE</label>
-              <svg class="input-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3v18h18v-2H5V3H3zm6 14h2v-6H9v6zm4 0h2V9h-2v8zm4 0h2V5h-2v12z"/></svg>
-            </div>
-          </div>
-
-          <div class="field field-purple">
-            <div class="input-wrapper">
-              <input class="field-input" id="baseInput" type="text" tabindex="3" autocomplete="off" placeholder=" ">
-              <label class="field-label" for="baseInput">BASE (DEFAULT 100)</label>
-              <svg class="input-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3v18h18v-2H5V3H3zm6 14h2v-6H9v6zm4 0h2V9h-2v8zm4 0h2V5h-2v12z"/></svg>
-            </div>
+          <div class="result-row">
+            <div class="stat-value stat-value--big" id="resultValue" title="Ctrl+C to copy">0</div>
+            <button class="copy-btn" id="copyBtn" type="button" title="Ctrl+C">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="8.5" y="8.5" width="11" height="11" rx="2"/>
+                <path d="M4.5 15.5V6.2A1.7 1.7 0 0 1 6.2 4.5h9.3"/>
+              </svg>
+              <span>Copy</span>
+            </button>
           </div>
         </div>
+      </div>
 
-        <div class="result-card">
-          <div class="result-col">
-            <div class="stat-label">DIFFERENCE <button class="copy-icon-btn ripple-btn" id="copyDiffBtn" tabindex="4" title="Copy Difference">⎘</button></div>
-            <div class="stat-value" id="diffValue">—</div>
-          </div>
-          
-          <div class="result-col">
-            <div class="stat-label">PERCENTAGE CHANGE <span class="badge" id="statusBadge"></span></div>
-            <div class="stat-value" id="resultValue">—</div>
-          </div>
+      <p class="reset-hint">Enter moves to the next field · Esc clears · Base resets to 100 on refresh</p>
 
-          <button class="copy-btn ripple-btn" id="copyBtn" tabindex="5" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V7a2 2 0 0 1 2-2h8"/></svg>
-            <span id="copyLabel">Copy Result</span>
-          </button>
-        </div>
-      </section>
-    </div>
+    </section>
+
   </div>
 
-  <script src="script.js"></script>
+  <!-- Toast Notification -->
+  <div class="toast" id="toast" aria-live="polite" aria-atomic="true">Copied to clipboard</div>
+
+<script src="script.js"></script>
 </body>
 </html>
