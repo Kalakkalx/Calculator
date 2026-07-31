@@ -1,613 +1,602 @@
 (() => {
   "use strict";
 
-  // Throttled Optimized Cursor Glow (Desktop Only)
-  const cursorGlow = document.getElementById("cursorGlow");
-  if (window.matchMedia("(pointer: fine)").matches) {
-    let mouseX = 0, mouseY = 0, glowScheduled = false;
-    window.addEventListener("mousemove", (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      if (!glowScheduled) {
-        glowScheduled = true;
-        requestAnimationFrame(() => {
-          cursorGlow.style.left = mouseX + "px";
-          cursorGlow.style.top = mouseY + "px";
-          glowScheduled = false;
-        });
-      }
-    });
+  /* ============================================================
+     Shared helpers
+     ============================================================ */
+
+  const MAX_INT_DIGITS = 15;
+  const MAX_DECIMALS = 10;
+
+  function formatLive(raw) {
+    if (raw === "" || raw === "-") return raw;
+    const neg = raw.startsWith("-");
+    let s = neg ? raw.slice(1) : raw;
+    const dotIndex = s.indexOf(".");
+    let intPart = dotIndex === -1 ? s : s.slice(0, dotIndex);
+    const decPart = dotIndex === -1 ? "" : s.slice(dotIndex);
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return (neg ? "-" : "") + intPart + decPart;
   }
 
-  // Helpers
-  function formatLive(raw) {
-    if (raw === "" || raw === "-" || raw === "—" || raw === "Cannot divide by zero" || raw === "Error") return raw;
-    const parts = raw.split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
+  function fmtDisplay(n, maxDecimals = 10) {
+    if (!isFinite(n)) return "Error";
+    if (Object.is(n, -0)) n = 0;
+    return n.toLocaleString(undefined, { maximumFractionDigits: maxDecimals });
+  }
+
+  function fmtPlain(n, maxDecimals = 10) {
+    if (!isFinite(n)) return "Error";
+    if (Object.is(n, -0)) n = 0;
+    let s = n.toFixed(maxDecimals);
+    if (s.includes(".")) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s === "" || s === "-" ? "0" : s;
   }
 
   function stripCommas(str) {
     return (str || "").replace(/,/g, "");
   }
 
-  // Robust Parsing for Paste Support (₹50,000, 50 000, 50_000)
-  function cleanPastedValue(val) {
-    if (!val) return "";
-    let cleaned = val.replace(/[₹$€£,\s_]/g, "");
-    return cleaned;
+  function digitCount(str) {
+    return (str || "").replace(/[^0-9]/g, "").length;
   }
 
-  // Ripple Effect with automated DOM cleanup on animationend
-  document.querySelectorAll('.ripple-btn').forEach(btn => {
-    btn.addEventListener('click', function (e) {
-      const rect = this.getBoundingClientRect();
-      const circle = document.createElement('span');
-      const diameter = Math.max(rect.width, rect.height);
-      const radius = diameter / 2;
-      circle.style.width = circle.style.height = `${diameter}px`;
-      circle.style.left = `${e.clientX - rect.left - radius}px`;
-      circle.style.top = `${e.clientY - rect.top - radius}px`;
-      circle.classList.add('ripple');
-      circle.addEventListener('animationend', () => circle.remove());
-      const oldRipple = this.querySelector('.ripple');
-      if (oldRipple) oldRipple.remove();
-      this.appendChild(circle);
-    });
-  });
+  function shrinkClassFor(text) {
+    const len = text.replace(/[,.\-]/g, "").length;
+    if (len > 15) return "shrink-3";
+    if (len > 11) return "shrink-2";
+    if (len > 8) return "shrink-1";
+    return "";
+  }
 
-  // State & Themes & Remember Panel/Window settings
+  function applyShrink(el) {
+    el.classList.remove("shrink-1", "shrink-2", "shrink-3");
+    const cls = shrinkClassFor(el.textContent);
+    if (cls) el.classList.add(cls);
+  }
+
+  function triggerUpdateAnimation(el) {
+    el.classList.remove("animate-update");
+    void el.offsetWidth;
+    el.classList.add("animate-update");
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+  }
+
+  let toastTimer = null;
+  const toastEl = document.getElementById("toast");
+
+  function showToast(message) {
+    toastEl.textContent = message;
+    toastEl.classList.add("is-visible");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastEl.classList.remove("is-visible");
+    }, 2200);
+  }
+
+  /* ============================================================
+     Theme
+     ============================================================ */
   const root = document.documentElement;
   const themeToggle = document.getElementById("themeToggle");
-  const savedTheme = localStorage.getItem("calc-theme") || "light";
-  root.setAttribute("data-theme", savedTheme);
-  
-  function toggleTheme() {
-    const isDark = root.getAttribute("data-theme") === "dark";
-    const newTheme = isDark ? "light" : "dark";
-    root.setAttribute("data-theme", newTheme);
-    localStorage.setItem("calc-theme", newTheme);
+
+  const savedTheme = localStorage.getItem("calc-theme");
+  if (savedTheme === "dark") {
+    root.setAttribute("data-theme", "dark");
+    themeToggle.setAttribute("aria-pressed", "true");
   }
-  themeToggle.addEventListener("click", toggleTheme);
 
-  // Mode Switcher (Mobile viewports)
-  const modeBtns = document.querySelectorAll(".mode-btn");
-  const panels = document.querySelectorAll(".panel");
-  const modeSwitch = document.getElementById("modeSwitch");
-  const savedPanel = localStorage.getItem("calc-active-panel") || "calc";
+  themeToggle.addEventListener("click", () => {
+    const isDark = root.getAttribute("data-theme") === "dark";
+    const next = isDark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    themeToggle.setAttribute("aria-pressed", String(!isDark));
+    localStorage.setItem("calc-theme", next);
+  });
 
-  function switchMode(mode) {
-    modeBtns.forEach(b => {
-      if (b.dataset.mode === mode) b.classList.add("is-active");
-      else b.classList.remove("is-active");
+  /* ============================================================
+     Mode switching
+     ============================================================ */
+  const modeSwitch = document.querySelector(".mode-switch");
+  const modeButtons = document.querySelectorAll(".mode-btn");
+  const calcPanel = document.getElementById("calcPanel");
+  const templatePanel = document.getElementById("templatePanel");
+
+  function setMode(mode, { focus = false } = {}) {
+    modeButtons.forEach((b) => {
+      const active = b.dataset.mode === mode;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-selected", String(active));
     });
     modeSwitch.setAttribute("data-active", mode);
-    localStorage.setItem("calc-active-panel", mode);
-    
-    if (window.innerWidth <= 1100) {
-      panels.forEach(p => p.classList.remove("is-active"));
-      document.getElementById(mode + "Panel").classList.add("is-active");
-    }
+    document.body.setAttribute("data-mode", mode);
+
+    const showCalc = mode === "calc";
+    calcPanel.classList.toggle("is-active", showCalc);
+    calcPanel.setAttribute("aria-hidden", String(!showCalc));
+    templatePanel.classList.toggle("is-active", !showCalc);
+    templatePanel.setAttribute("aria-hidden", String(showCalc));
+
+    localStorage.setItem("calc-mode", mode);
+    if (!showCalc && focus) originalInput.focus();
   }
 
-  modeBtns.forEach(btn => {
-    btn.addEventListener("click", () => switchMode(btn.dataset.mode));
-  });
-  switchMode(savedPanel);
-
-  // Window Controls Simulation
-  document.querySelector(".win-min").addEventListener("click", () => showToastMessage("Minimized to taskbar"));
-  document.querySelector(".win-max").addEventListener("click", () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  });
-  document.querySelector(".win-close").addEventListener("click", () => {
-    document.getElementById("app").style.opacity = "0";
-    setTimeout(() => alert("Application closed."), 200);
+  modeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => setMode(btn.dataset.mode, { focus: true }));
   });
 
-  // ===================== CALCULATOR ENGINE =====================
+  const savedMode = localStorage.getItem("calc-mode") === "template" ? "template" : "calc";
+  setMode(savedMode);
+
+  /* ============================================================
+     Standard calculator core with Windows-style % & precedence
+     ============================================================ */
   const exprEl = document.getElementById("calcExpr");
   const valueEl = document.getElementById("calcValue");
-  const exprContainer = document.getElementById("exprContainer");
-  
-  let tokens = []; 
-  let currentInput = "0";
-  let isResult = false;
+
+  const OPS = {
+    "+": (a, b) => a + b,
+    "−": (a, b) => a - b,
+    "×": (a, b) => a * b,
+    "÷": (a, b) => a / b,
+  };
+
+  let tokens = [];
+  let current = "0";
+  let awaitingOperand = false;
+  let resultShown = false;
+  let errorShown = false;
   let lastOp = null;
   let lastOperand = null;
-  let calculationFinished = false;
+  let lastExprText = null;
 
-  function updateCalcDisplay() {
-    let val = formatLive(currentInput) || "0";
-    if (val === "Cannot divide by zero" || val === "Error") valueEl.style.fontSize = "28px";
-    else if (val.length > 15) valueEl.style.fontSize = "26px";
-    else if (val.length > 11) valueEl.style.fontSize = "36px";
-    else valueEl.style.fontSize = "52px";
-    
-    valueEl.textContent = val;
-    exprEl.textContent = tokens.join(" ") || "\u00A0";
-    exprContainer.scrollLeft = exprContainer.scrollWidth;
+  function exprTextFromTokens(list, trailing) {
+    const parts = list.map((t) => (t.type === "num" ? fmtDisplay(t.value) : t.value));
+    if (trailing !== undefined) parts.push(trailing);
+    return parts.join(" ");
   }
 
-  function evaluateExpression(exprArray) {
-    try {
-      let sanitized = exprArray.join(" ").replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-");
-      if (sanitized.includes("/ 0") || sanitized.includes("/0")) return "Cannot divide by zero";
-      const fn = new Function('"use strict"; return (' + sanitized + ')');
-      const result = fn();
-      if (!isFinite(result)) return "Cannot divide by zero";
-      return Number(Math.round(result + "e10") + "e-10").toString();
-    } catch {
-      return "Error";
+  function render({ animate = false } = {}) {
+    if (errorShown) {
+      valueEl.textContent = "Cannot divide by zero";
+      valueEl.classList.add("is-error");
+      valueEl.classList.remove("shrink-1", "shrink-2", "shrink-3");
+      exprEl.textContent = lastExprText || "\u00A0";
+      return;
     }
-  }
+    valueEl.classList.remove("is-error");
 
-  function inputNum(num) {
-    if (calculationFinished) {
-      tokens = [];
-      calculationFinished = false;
+    const text = formatLive(current) || "0";
+    if (valueEl.textContent !== text) {
+      valueEl.textContent = text;
+      if (animate) triggerUpdateAnimation(valueEl);
     }
-    if (isResult) { 
-      currentInput = num; 
-      isResult = false; 
-    } else if (currentInput === "0" && num !== ".") { 
-      currentInput = num; 
-    } else if (num === "." && currentInput.includes(".")) { 
-      return; 
-    } else { 
-      currentInput += num; 
-    }
-    
-    if (currentInput.replace(/[^0-9]/g,"").length > 18) currentInput = currentInput.slice(0, -1);
-    updateCalcDisplay();
-  }
+    applyShrink(valueEl);
 
-  function inputOp(op) {
-    if (currentInput === "Cannot divide by zero" || currentInput === "Error") clearCalcAll();
-    calculationFinished = false;
-    
-    const operators = ["+", "−", "×", "÷"];
-    // Operator replacement / multi-operator protection
-    if (currentInput === "0" && tokens.length > 0 && operators.includes(tokens[tokens.length - 1]) && !isResult) {
-      tokens[tokens.length - 1] = op;
+    if (tokens.length) {
+      exprEl.textContent = exprTextFromTokens(tokens);
+    } else if (lastExprText) {
+      exprEl.textContent = lastExprText;
     } else {
-      if (isResult) { 
-        tokens = [currentInput, op]; 
-        isResult = false; 
-      } else { 
-        tokens.push(stripCommas(currentInput), op); 
+      exprEl.textContent = "\u00A0";
+    }
+  }
+
+  function highlightOp(nextOp) {
+    document.querySelectorAll(".key-op").forEach((k) => {
+      k.classList.toggle("is-selected", k.dataset.op === nextOp);
+    });
+  }
+  function clearOpHighlight() {
+    document.querySelectorAll(".key-op").forEach((k) => k.classList.remove("is-selected"));
+  }
+
+  function inputDigit(d) {
+    if (resultShown || errorShown) {
+      current = d === "." ? "0." : d;
+      tokens = []; lastExprText = null; resultShown = false; errorShown = false; awaitingOperand = false;
+      clearOpHighlight();
+      render({ animate: true });
+      return;
+    }
+    if (awaitingOperand) {
+      current = d === "." ? "0." : d;
+      awaitingOperand = false;
+      render({ animate: true });
+      return;
+    }
+    if (d === ".") {
+      if (!current.includes(".")) current += current === "" ? "0." : ".";
+      render({ animate: false });
+      return;
+    }
+    const dotIdx = current.indexOf(".");
+    if (dotIdx !== -1 && current.length - dotIdx - 1 >= MAX_DECIMALS) return;
+    if (digitCount(current) >= MAX_INT_DIGITS) return;
+
+    current = current === "0" ? d : current + d;
+    render({ animate: false });
+  }
+
+  function chooseOperator(nextOp) {
+    resultShown = false;
+    errorShown = false;
+    lastExprText = null;
+    const val = parseFloat(stripCommas(current));
+
+    if (awaitingOperand && tokens.length && tokens[tokens.length - 1].type === "op") {
+      tokens[tokens.length - 1].value = nextOp;
+    } else {
+      tokens.push({ type: "num", value: val });
+      tokens.push({ type: "op", value: nextOp });
+    }
+
+    awaitingOperand = true;
+    highlightOp(nextOp);
+    render({ animate: false });
+  }
+
+  function evaluateTokens(list) {
+    const arr = list.map((t) => ({ ...t }));
+    for (let i = 1; i < arr.length - 1; ) {
+      if (arr[i].type === "op" && (arr[i].value === "×" || arr[i].value === "÷")) {
+        const a = arr[i - 1].value, b = arr[i + 1].value;
+        if (arr[i].value === "÷" && b === 0) return { error: "divzero" };
+        const r = arr[i].value === "×" ? a * b : a / b;
+        arr.splice(i - 1, 3, { type: "num", value: r });
+      } else {
+        i += 2;
       }
     }
-    
-    currentInput = "0";
-    lastOp = null; 
-    lastOperand = null;
-    updateCalcDisplay();
-  }
-
-  function calculate() {
-    if (tokens.length === 0 && !isResult) return;
-    
-    let exprString = "";
-    if (calculationFinished && lastOp && lastOperand) {
-      // Repeated equals flow
-      tokens = [currentInput, lastOp, lastOperand];
-      exprString = `${formatLive(tokens[0])} ${tokens[1]} ${formatLive(tokens[2])} =`;
-    } else {
-      lastOp = tokens[tokens.length - 1];
-      lastOperand = stripCommas(currentInput);
-      tokens.push(lastOperand);
-      exprString = tokens.join(" ") + " =";
+    let result = arr[0].value;
+    for (let i = 1; i < arr.length - 1; i += 2) {
+      const op = arr[i].value, b = arr[i + 1].value;
+      result = OPS[op](result, b);
     }
-    
-    const finalResult = evaluateExpression(tokens);
-    addToHistory(exprString, formatLive(finalResult), [...tokens]);
-    
-    currentInput = finalResult;
-    tokens = [exprString]; // Keep expression visible: 5 x 8 =
-    isResult = true;
-    calculationFinished = true;
-    updateCalcDisplay();
+    return { value: result };
   }
 
-  // Windows-style % behavior
-  function percentLogic() {
-    if (currentInput === "Cannot divide by zero" || currentInput === "Error") return;
-    const val = parseFloat(stripCommas(currentInput));
-    if (isNaN(val)) return;
+  function showDivideByZero() {
+    tokens = [];
+    current = "0";
+    awaitingOperand = true;
+    resultShown = false;
+    errorShown = true;
+    clearOpHighlight();
+    render({ animate: true });
+  }
 
-    const operators = ["+", "−", "×", "÷"];
-    const lastToken = tokens[tokens.length - 1];
+  function equals() {
+    if (tokens.length) {
+      const finalList = tokens.concat([{ type: "num", value: parseFloat(stripCommas(current)) }]);
+      const exprText = exprTextFromTokens(finalList, "=");
+      const outcome = evaluateTokens(finalList);
 
-    if (tokens.length > 0 && operators.includes(lastToken)) {
-      // e.g. 200 + 10% -> 200 + (200 * 10 / 100)
-      const firstOperand = parseFloat(stripCommas(tokens[0]));
-      const pctValue = (firstOperand * val) / 100;
-      currentInput = pctValue.toString();
-    } else {
-      currentInput = (val / 100).toString();
+      if (outcome.error === "divzero") {
+        showDivideByZero();
+        return;
+      }
+
+      lastOp = finalList[finalList.length - 2].value;
+      lastOperand = finalList[finalList.length - 1].value;
+      lastExprText = exprText;
+      tokens = [];
+      current = fmtPlain(outcome.value);
+      awaitingOperand = true;
+      resultShown = true;
+      errorShown = false;
+    } else if (lastOp !== null) {
+      const base = parseFloat(stripCommas(current));
+      if (lastOp === "÷" && lastOperand === 0) { showDivideByZero(); return; }
+      const result = OPS[lastOp](base, lastOperand);
+      lastExprText = `${fmtDisplay(base)} ${lastOp} ${fmtDisplay(lastOperand)} =`;
+      current = fmtPlain(result);
+      awaitingOperand = true;
+      resultShown = true;
+      errorShown = false;
     }
-    updateCalcDisplay();
+    clearOpHighlight();
+    render({ animate: true });
   }
 
-  function clearCalcAll() { 
-    currentInput = "0"; 
-    tokens = []; 
-    isResult = false; 
-    calculationFinished = false;
-    lastOp = null; 
-    lastOperand = null; 
-    updateCalcDisplay(); 
+  function clearAll() {
+    tokens = []; current = "0"; awaitingOperand = false; resultShown = false; errorShown = false;
+    lastOp = null; lastOperand = null; lastExprText = null;
+    clearOpHighlight();
+    render({ animate: true });
   }
 
-  function clearCalcEntry() { 
-    currentInput = "0"; 
-    isResult = false; 
-    calculationFinished = false;
-    updateCalcDisplay(); 
+  function clearEntry() {
+    current = "0";
+    resultShown = false;
+    errorShown = false;
+    render({ animate: true });
   }
 
   function backspace() {
-    if (calculationFinished) return;
-    if (!isResult && currentInput.length > 1 && currentInput !== "Cannot divide by zero") {
-      currentInput = currentInput.slice(0, -1);
-    } else if (!isResult) {
-      currentInput = "0";
-    }
-    updateCalcDisplay();
+    if (awaitingOperand || resultShown || errorShown) return;
+    current = current.length > 1 ? current.slice(0, -1) : "0";
+    render({ animate: false });
   }
 
-  // Calculator Event Bindings
-  document.querySelectorAll(".key-num").forEach(btn => {
+  function negate() {
+    if (errorShown) return;
+    if (current === "0") return;
+    current = current.startsWith("-") ? current.slice(1) : "-" + current;
+    resultShown = false;
+    if (awaitingOperand) awaitingOperand = false;
+    render({ animate: true });
+  }
+
+  function percent() {
+    if (errorShown) return;
+    const n = parseFloat(stripCommas(current));
+    if (isNaN(n)) return;
+
+    if (tokens.length >= 2) {
+      const lastOpVal = tokens[tokens.length - 1].value;
+      const baseNum = tokens[tokens.length - 2].value;
+      if (lastOpVal === "+" || lastOpVal === "−") {
+        current = fmtPlain(baseNum * (n / 100));
+      } else if (lastOpVal === "×" || lastOpVal === "÷") {
+        current = fmtPlain(n / 100);
+      }
+    } else {
+      current = fmtPlain(n / 100);
+    }
+    resultShown = false;
+    render({ animate: true });
+  }
+
+  document.querySelectorAll('[data-num], [data-action="decimal"]').forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (btn.dataset.action === "decimal") inputNum(".");
-      else inputNum(btn.dataset.num);
+      if (btn.dataset.action === "decimal") inputDigit(".");
+      else inputDigit(btn.dataset.num);
     });
   });
 
-  document.querySelectorAll(".key-op").forEach(btn => {
-    if(btn.dataset.action === "op") btn.addEventListener("click", () => inputOp(btn.dataset.op));
+  document.querySelectorAll('[data-action="op"]').forEach((btn) => {
+    btn.addEventListener("click", () => chooseOperator(btn.dataset.op));
   });
 
-  document.querySelector('[data-action="equals"]').addEventListener("click", calculate);
-  document.querySelector('[data-action="clear"]').addEventListener("click", clearCalcAll);
-  document.querySelector('[data-action="clear-entry"]').addEventListener("click", clearCalcEntry);
+  document.querySelector('[data-action="clear"]').addEventListener("click", clearAll);
+  document.querySelector('[data-action="ce"]').addEventListener("click", clearEntry);
   document.querySelector('[data-action="backspace"]').addEventListener("click", backspace);
-  document.querySelector('[data-action="percent"]').addEventListener("click", percentLogic);
-  
-  document.querySelector('[data-action="negate"]').addEventListener("click", () => {
-    if (currentInput !== "0" && !isResult && currentInput !== "Cannot divide by zero") {
-      currentInput = currentInput.startsWith("-") ? currentInput.slice(1) : "-" + currentInput;
-      updateCalcDisplay();
-    }
-  });
+  document.querySelector('[data-action="negate"]').addEventListener("click", negate);
+  document.querySelector('[data-action="percent"]').addEventListener("click", percent);
+  document.querySelector('[data-action="equals"]').addEventListener("click", equals);
 
-  // ===================== HISTORY & EXPORT =====================
-  const historyPanel = document.getElementById("historyPanel");
-  const historyList = document.getElementById("historyList");
-  const historyEmpty = document.getElementById("historyEmpty");
-  const historySearch = document.getElementById("historySearch");
-  let historyData = JSON.parse(localStorage.getItem("calc-history-pro") || "[]");
+  render({ animate: false });
 
-  document.getElementById("historyToggleBtn").addEventListener("click", () => historyPanel.classList.add("is-open"));
-  document.getElementById("closeHistoryBtn").addEventListener("click", () => historyPanel.classList.remove("is-open"));
+  /* Keyboard shortcuts */
+  window.addEventListener("keydown", (e) => {
+    const inCalc = calcPanel.classList.contains("is-active");
+    const activeIsInput = document.activeElement && document.activeElement.tagName === "INPUT";
 
-  function highlightText(text, filter) {
-    if (!filter) return text;
-    const safeFilter = filter.replace(/,/g, "").replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${safeFilter})`, "gi");
-    return text.replace(regex, "<mark>$1</mark>");
-  }
-
-  function renderHistory(filter = "") {
-    historyList.innerHTML = "";
-    const searchStr = filter.replace(/,/g, "").toLowerCase();
-    
-    const filtered = historyData.filter(h => 
-      h.expr.replace(/,/g, "").toLowerCase().includes(searchStr) || 
-      h.res.replace(/,/g, "").toLowerCase().includes(searchStr) ||
-      h.time.toLowerCase().includes(searchStr)
-    );
-    
-    if (filtered.length === 0) {
-      historyList.appendChild(historyEmpty);
-      historyEmpty.style.display = "block";
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+      e.preventDefault();
+      themeToggle.click();
       return;
     }
-    historyEmpty.style.display = "none";
 
-    let lastDateStr = "";
+    if (inCalc && !activeIsInput) {
+      const keyOpMap = { "+": "+", "-": "−", "*": "×", "/": "÷" };
 
-    filtered.forEach((item) => {
-      const itemDate = new Date(item.timestamp);
-      const today = new Date();
-      let dateLabel = itemDate.toLocaleDateString();
-      if (itemDate.toDateString() === today.toDateString()) dateLabel = "Today";
-      else if (new Date(today.setDate(today.getDate() - 1)).toDateString() === itemDate.toDateString()) dateLabel = "Yesterday";
-
-      if (dateLabel !== lastDateStr && !filter) {
-        const groupHead = document.createElement("div");
-        groupHead.className = "history-group-label";
-        groupHead.textContent = dateLabel;
-        historyList.appendChild(groupHead);
-        lastDateStr = dateLabel;
+      if (e.key >= "0" && e.key <= "9") { inputDigit(e.key); return; }
+      if (e.key === ".") { inputDigit("."); return; }
+      if (keyOpMap[e.key]) { e.preventDefault(); chooseOperator(keyOpMap[e.key]); return; }
+      if (e.key === "Enter" || e.key === "=") { e.preventDefault(); equals(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "l") { e.preventDefault(); clearAll(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") { e.preventDefault(); clearEntry(); return; }
+      if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
+      if (e.key === "Escape") { clearAll(); return; }
+      if (e.key === "%") { percent(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        copyText(stripCommas(current));
+        showToast("Copied result to clipboard");
+        triggerUpdateAnimation(valueEl);
+        return;
       }
-
-      const li = document.createElement("li");
-      li.className = "history-item";
-      li.innerHTML = `
-        <button class="history-del" data-id="${item.id}" title="Delete item">✖</button>
-        <div class="history-expr">${highlightText(item.expr, filter)}</div>
-        <div class="history-res">${highlightText(item.res, filter)}</div>
-        <div class="history-time">${highlightText(item.time, filter)}</div>
-      `;
-      
-      li.addEventListener("click", (e) => {
-        if(e.target.classList.contains("history-del")) {
-          if (confirm("Delete this history item?")) {
-            historyData = historyData.filter(h => h.id !== parseInt(e.target.dataset.id));
-            localStorage.setItem("calc-history-pro", JSON.stringify(historyData));
-            renderHistory(historySearch.value);
-          }
-          return;
-        }
-        currentInput = stripCommas(item.res);
-        tokens = item.tokens ? [...item.tokens] : [];
-        isResult = true;
-        calculationFinished = false;
-        updateCalcDisplay();
-        if(window.innerWidth <= 1100) historyPanel.classList.remove("is-open");
-      });
-      historyList.appendChild(li);
-    });
-  }
-
-  function addToHistory(expr, res, tokenArr) {
-    if (res === "Error" || res === "Cannot divide by zero") return;
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-    historyData.unshift({ id: Date.now(), timestamp: now.getTime(), expr, res, time: timeStr, tokens: tokenArr });
-    if(historyData.max && historyData.length > 100) historyData.pop();
-    localStorage.setItem("calc-history-pro", JSON.stringify(historyData));
-    renderHistory(historySearch.value);
-  }
-
-  document.getElementById("historyClear").addEventListener("click", () => {
-    if (confirm("Clear all calculation history?")) {
-      historyData = [];
-      localStorage.removeItem("calc-history-pro");
-      renderHistory();
     }
   });
 
-  // History Export (CSV / TXT)
-  document.getElementById("historyExportCsv").addEventListener("click", () => {
-    if (historyData.length === 0) { alert("No history to export."); return; }
-    let csv = "Expression,Result,Timestamp\n" + historyData.map(h => `"${h.expr}","${h.res}","${h.time}"`).join("\n");
-    downloadFile(csv, "calculator_history.csv", "text/csv");
-  });
-
-  document.getElementById("historyExportTxt").addEventListener("click", () => {
-    if (historyData.length === 0) { alert("No history to export."); return; }
-    let txt = historyData.map(h => `${h.expr} ${h.res} (${h.time})`).join("\n");
-    downloadFile(txt, "calculator_history.txt", "text/plain");
-  });
-
-  function downloadFile(content, filename, contentType) {
-    const blob = new Blob([content], { type: contentType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-  
-  historySearch.addEventListener("input", (e) => renderHistory(e.target.value));
-  renderHistory();
-
-  // ===================== % CHANGE TEMPLATE =====================
-  const inputs = {
-    orig: document.getElementById("originalInput"),
-    fin: document.getElementById("finalInput"),
-    base: document.getElementById("baseInput")
-  };
-  const diffVal = document.getElementById("diffValue");
-  const resVal = document.getElementById("resultValue");
+  /* ============================================================
+     % Change template
+     ============================================================ */
+  const originalInput = document.getElementById("originalInput");
+  const finalInput = document.getElementById("finalInput");
+  const baseInput = document.getElementById("baseInput");
+  const baseHint = document.getElementById("baseHint");
+  const diffValue = document.getElementById("diffValue");
+  const diffCopyBtn = document.getElementById("diffCopyBtn");
+  const resultValue = document.getElementById("resultValue");
+  const resultLabel = document.getElementById("resultLabel");
+  const resultFormula = document.getElementById("resultFormula");
   const statusBadge = document.getElementById("statusBadge");
   const copyBtn = document.getElementById("copyBtn");
-  
-  // Set explicit default for Base
-  inputs.base.value = "100";
 
-  // Enter Key Navigation between inputs
-  inputs.orig.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); inputs.fin.focus(); }});
-  inputs.fin.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); inputs.base.focus(); }});
-  inputs.base.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); inputs.base.blur(); }});
-  
-  // Disable mouse wheel on Base field
-  inputs.base.addEventListener("wheel", e => e.preventDefault(), { passive: false });
+  const DEFAULT_BASE = "100";
+  const TEMPLATE_DECIMALS = 8;
+  let resultRawText = "";
+  let diffRawText = "";
 
-  function cleanInput(el) {
-    let raw = cleanPastedValue(el.value).replace(/[^0-9.-]/g, "");
-    const parts = raw.split(".");
-    if(parts.length > 2) raw = parts[0] + "." + parts.slice(1).join("");
-    // Handle leading minus properly
-    if (raw.lastIndexOf("-") > 0) raw = "-" + raw.replace(/-/g, "");
+  function formatFieldLive(el, allowNegative = true) {
+    let raw = stripCommas(el.value);
+    raw = raw.replace(/[^0-9.\-]/g, "");
+    if (!allowNegative) raw = raw.replace(/-/g, "");
+    const neg = raw.startsWith("-");
+    raw = raw.replace(/-/g, "");
+    if (neg && allowNegative) raw = "-" + raw;
+    const dot = raw.indexOf(".");
+    if (dot !== -1) raw = raw.slice(0, dot + 1) + raw.slice(dot + 1).replace(/\./g, "");
     el.value = formatLive(raw);
   }
 
-  // Cancelable Animation Frame for Number Counting
-  let animIdDiff = null;
-  let animIdRes = null;
-
-  function animateValue(obj, start, end, duration, formatPrecision = 8, isDiff = false) {
-    if (isDiff && animIdDiff) cancelAnimationFrame(animIdDiff);
-    if (!isDiff && animIdRes) cancelAnimationFrame(animIdRes);
-
-    let startTimestamp = null;
-    const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      const current = start + progress * (end - start);
-      obj.textContent = formatLive(current.toFixed(formatPrecision).replace(/\.?0+$/, ""));
-      if (progress < 1) {
-        if (isDiff) animIdDiff = window.requestAnimationFrame(step);
-        else animIdRes = window.requestAnimationFrame(step);
-      }
-    };
-    if (isDiff) animIdDiff = window.requestAnimationFrame(step);
-    else animIdRes = window.requestAnimationFrame(step);
+  function fieldNumber(el) {
+    const v = stripCommas(el.value).trim();
+    if (v === "" || v === "-") return NaN;
+    return parseFloat(v);
   }
 
-  let lastPercent = 0;
-  let lastDiffVal = 0;
+  function computeChange() {
+    const original = fieldNumber(originalInput);
+    const final = fieldNumber(finalInput);
 
-  function calcTemplate() {
-    const orig = parseFloat(stripCommas(inputs.orig.value));
-    const fin = parseFloat(stripCommas(inputs.fin.value));
-    let baseRaw = stripCommas(inputs.base.value);
-    let base = parseFloat(baseRaw);
+    const baseTrim = baseInput.value.trim();
+    const baseNum = fieldNumber(baseInput);
+    let baseValid = 100, hint = "", warn = false;
     
-    // Invalid Base validation: reset visually and internally to 100 if invalid (abc, 0, negative, empty)
-    if (baseRaw !== "" && (isNaN(base) || base <= 0)) {
-      inputs.base.value = "100";
-      base = 100;
-    } else if (baseRaw === "") {
-      base = 100; // default internal
+    if (baseTrim === "" || isNaN(baseNum) || baseNum <= 0) {
+      if (baseTrim !== "") {
+        baseInput.value = DEFAULT_BASE;
+        hint = "Invalid base — reset to 100";
+        warn = true;
+      } else {
+        hint = "Using default 100";
+      }
+    } else {
+      baseValid = baseNum;
     }
+    
+    baseHint.textContent = hint;
+    baseHint.classList.toggle("is-warning", warn);
+    baseInput.classList.toggle("is-invalid", warn);
 
-    if (isNaN(orig) || isNaN(fin)) {
-      diffVal.textContent = "—"; 
-      resVal.textContent = "—";
-      statusBadge.classList.remove("show", "is-increase", "is-decrease");
-      resVal.className = "stat-value";
+    resultLabel.firstChild.textContent = baseValid === 100 ? "% Change " : "Result ";
+    resultFormula.textContent = baseValid === 100
+      ? "((original − final) / original) × 100"
+      : `((original − final) / original) × ${fmtDisplay(baseValid)}`;
+
+    if (isNaN(original) || isNaN(final)) {
+      diffValue.textContent = "—";
+      resultValue.textContent = "—";
+      resultValue.classList.remove("is-negative", "is-positive");
+      statusBadge.hidden = true;
+      resultRawText = "";
+      diffRawText = "";
       copyBtn.disabled = true;
-      lastPercent = 0; lastDiffVal = 0;
       return;
     }
 
     copyBtn.disabled = false;
-    const diff = orig - fin;
-    const absDiff = Math.abs(diff);
+    const diff = original - final;
+    diffValue.textContent = fmtDisplay(diff, 10);
+    diffValue.classList.toggle("is-negative", diff < 0);
+    diffValue.classList.toggle("is-positive", diff > 0);
+    diffRawText = fmtPlain(diff, 10);
 
-    // Difference Decimal precision formatting (.00 if integer)
-    const diffDecimals = (absDiff.toString().split('.')[1] || '').length;
-    const formattedDiff = absDiff % 1 === 0 && diffDecimals === 0 ? absDiff.toFixed(2) : absDiff.toString();
-
-    if (absDiff !== lastDiffVal) {
-      animateValue(diffVal, lastDiffVal, absDiff, 300, Math.max(diffDecimals, 2), true);
-      lastDiffVal = absDiff;
-    } else {
-      diffVal.textContent = formatLive(formattedDiff);
-    }
-    
-    if (orig === 0) { 
-      resVal.textContent = "—"; 
+    if (original === 0) {
+      resultValue.textContent = "Undefined";
+      resultValue.classList.remove("is-negative", "is-positive");
+      statusBadge.hidden = true;
+      resultRawText = "";
       copyBtn.disabled = true;
-      return; 
-    }
-
-    const percent = (diff / orig) * base;
-    const absPercent = Math.abs(percent);
-
-    if (absPercent !== lastPercent) {
-      animateValue(resVal, lastPercent, absPercent, 300, 8, false);
-      lastPercent = absPercent;
-    } else {
-      resVal.textContent = formatLive(absPercent.toFixed(8).replace(/\.?0+$/, ""));
-    }
-    
-    statusBadge.classList.add("show");
-    if (diff > 0) { // Decrease
-      resVal.className = "stat-value text-red";
-      statusBadge.className = "badge show is-decrease"; 
-      statusBadge.innerHTML = "▼ Decrease";
-    } else if (diff < 0) { // Increase
-      resVal.className = "stat-value text-green";
-      statusBadge.className = "badge show is-increase";
-      statusBadge.innerHTML = "▲ Increase";
-    } else {
-      resVal.className = "stat-value";
-      statusBadge.classList.remove("show", "is-increase", "is-decrease");
-    }
-  }
-
-  Object.values(inputs).forEach(input => {
-    input.addEventListener("input", () => { cleanInput(input); calcTemplate(); });
-    input.addEventListener("paste", (e) => {
-      setTimeout(() => { cleanInput(input); calcTemplate(); }, 10);
-    });
-    input.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "a") { e.preventDefault(); input.select(); }
-      if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") { e.preventDefault(); input.value = ""; calcTemplate(); }
-    });
-  });
-
-  // ===================== KEYBOARD SHORTCUTS & GLOBALS =====================
-  window.addEventListener("keydown", (e) => {
-    const isInputActive = document.activeElement.tagName === "INPUT";
-    
-    // Global Shortcuts
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 't') {
-      e.preventDefault(); toggleTheme(); return;
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
-      e.preventDefault(); historyPanel.classList.toggle("is-open"); return;
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
-      e.preventDefault(); clearCalcAll(); return;
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && !isInputActive) {
-      e.preventDefault(); copyToClipboard(stripCommas(valueEl.textContent)); return;
-    }
-    if (e.key === "F11") {
-      e.preventDefault();
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
-      else document.exitFullscreen().catch(()=>{});
       return;
     }
 
-    if (isInputActive) return;
+    const percentage = ((original - final) / original) * baseValid;
+    const displayText = percentage.toLocaleString(undefined, { maximumFractionDigits: TEMPLATE_DECIMALS });
+    resultRawText = fmtPlain(percentage, TEMPLATE_DECIMALS);
 
-    // Calculator Keyboard Engine
-    const key = e.key;
-    if (/[0-9]/.test(key)) inputNum(key);
-    if (key === ".") inputNum(".");
-    if (key === "+" || key === "-") inputOp(key === "-" ? "−" : "+");
-    if (key === "*" || key === "x") inputOp("×");
-    if (key === "/") inputOp("÷");
-    if (key === "%") percentLogic();
-    if (key === "Enter" || key === "=") { e.preventDefault(); calculate(); }
-    if (key === "Backspace") backspace();
-    if (key === "Escape") clearCalcAll();
-  });
+    if (resultValue.textContent !== displayText) {
+      resultValue.textContent = displayText;
+      triggerUpdateAnimation(resultValue);
+    }
+    resultValue.classList.toggle("is-negative", percentage < 0);
+    resultValue.classList.toggle("is-positive", percentage > 0);
+    applyShrink(resultValue);
 
-  // Toasts and Copy Operations
-  const toast = document.getElementById("toast");
-  const toastText = document.getElementById("toastText");
-
-  function showToastMessage(msg) {
-    toastText.textContent = msg;
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 2500);
+    statusBadge.hidden = false;
+    statusBadge.classList.remove("is-increase", "is-decrease", "is-same");
+    if (diff > 0) {
+      statusBadge.textContent = "▼ Decrease";
+      statusBadge.classList.add("is-decrease");
+    } else if (diff < 0) {
+      statusBadge.textContent = "▲ Increase";
+      statusBadge.classList.add("is-increase");
+    } else {
+      statusBadge.textContent = "No change";
+      statusBadge.classList.add("is-same");
+    }
   }
 
-  function copyToClipboard(text) {
-    if(!text || text === "0" || text === "—" || text === "Cannot divide by zero") return;
-    navigator.clipboard.writeText(text).then(() => showToastMessage("Copied to clipboard"));
+  originalInput.addEventListener("input", () => { formatFieldLive(originalInput); computeChange(); });
+  finalInput.addEventListener("input", () => { formatFieldLive(finalInput); computeChange(); });
+  baseInput.addEventListener("input", () => { formatFieldLive(baseInput, false); computeChange(); });
+
+  [originalInput, finalInput, baseInput].forEach((el) => {
+    el.addEventListener("focus", () => el.select());
+  });
+
+  originalInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); finalInput.focus(); }
+  });
+  finalInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); baseInput.focus(); }
+  });
+  baseInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); baseInput.blur(); }
+  });
+
+  function resetTemplate() {
+    originalInput.value = "";
+    finalInput.value = "";
+    baseInput.value = DEFAULT_BASE;
+    computeChange();
+    originalInput.focus();
   }
 
-  copyBtn.addEventListener("click", () => {
-    copyToClipboard(stripCommas(resVal.textContent));
-  });
-  
-  document.getElementById("copyDiffBtn").addEventListener("click", () => {
-    copyToClipboard(stripCommas(diffVal.textContent));
+  window.addEventListener("keydown", (e) => {
+    if (!templatePanel.classList.contains("is-active")) return;
+    const activeIsInput = document.activeElement && document.activeElement.tagName === "INPUT";
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a" && activeIsInput) {
+      e.preventDefault();
+      document.activeElement.select();
+      return;
+    }
+
+    if (e.key === "Escape") { resetTemplate(); return; }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c" && !activeIsInput) {
+      if (resultRawText) {
+        e.preventDefault();
+        copyText(resultRawText);
+        showToast("Copied % change result");
+        triggerUpdateAnimation(resultValue);
+      }
+    }
   });
 
+  copyBtn.addEventListener("click", async () => {
+    if (!resultRawText) return;
+    await copyText(resultRawText);
+    showToast("Copied % change result");
+    triggerUpdateAnimation(resultValue);
+  });
+
+  diffCopyBtn.addEventListener("click", async () => {
+    if (!diffRawText) return;
+    await copyText(diffRawText);
+    showToast("Copied difference value");
+    triggerUpdateAnimation(diffValue);
+  });
+
+  baseInput.value = DEFAULT_BASE;
+  computeChange();
 })();
