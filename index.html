@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calc</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app" id="app">
+
+    <header class="app-header">
+      <nav class="mode-switch" role="tablist" aria-label="Calculator mode">
+        <button class="mode-btn is-active" data-mode="calc" role="tab" aria-selected="true">Calculator</button>
+        <button class="mode-btn" data-mode="template" role="tab" aria-selected="false">% Change</button>
+        <span class="mode-thumb" aria-hidden="true"></span>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="historyToggle" title="Toggle history" aria-pressed="false" aria-label="Toggle calculation history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/>
+            <path d="M3.5 4.5v4.5H8"/>
+            <path d="M12 7.5V12l3 2"/>
+          </svg>
+        </button>
+
+        <button class="theme-toggle" id="themeToggle" aria-pressed="false" aria-label="Toggle dark mode">
+          <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="4.2"/>
+            <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7"/>
+          </svg>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5Z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================== STANDARD CALCULATOR ===================== -->
+    <section class="panel calc-panel is-active" id="calcPanel" aria-hidden="false">
+      <div class="calc-body">
+
+        <div class="calc-core">
+          <div class="display">
+            <div class="display-expr" id="calcExpr">&nbsp;</div>
+            <div class="display-value" id="calcValue" title="Ctrl+C to copy">0</div>
+          </div>
+
+          <div class="keys">
+            <button class="key key-fn" data-action="ce" title="Backspace clears entry, Esc clears all">CE</button>
+            <button class="key key-fn" data-action="clear" title="Esc">C</button>
+            <button class="key key-fn" data-action="backspace" title="Backspace">⌫</button>
+            <button class="key key-fn" data-action="percent" title="%">%</button>
+
+            <button class="key key-num" data-num="7" title="Key: 7">7</button>
+            <button class="key key-num" data-num="8" title="Key: 8">8</button>
+            <button class="key key-num" data-num="9" title="Key: 9">9</button>
+            <button class="key key-op" data-action="op" data-op="÷" title="Key: /">÷</button>
+
+            <button class="key key-num" data-num="4" title="Key: 4">4</button>
+            <button class="key key-num" data-num="5" title="Key: 5">5</button>
+            <button class="key key-num" data-num="6" title="Key: 6">6</button>
+            <button class="key key-op" data-action="op" data-op="×" title="Key: *">×</button>
+
+            <button class="key key-num" data-num="1" title="Key: 1">1</button>
+            <button class="key key-num" data-num="2" title="Key: 2">2</button>
+            <button class="key key-num" data-num="3" title="Key: 3">3</button>
+            <button class="key key-op" data-action="op" data-op="−" title="Key: -">−</button>
+
+            <button class="key key-fn" data-action="negate" title="+/-">+/-</button>
+            <button class="key key-num" data-num="0" title="Key: 0">0</button>
+            <button class="key key-num" data-action="decimal" title="Key: .">.</button>
+            <button class="key key-op" data-action="op" data-op="+" title="Key: +">+</button>
+
+            <button class="key key-eq" data-action="equals" title="Enter">=</button>
+          </div>
+        </div>
+
+        <aside class="history-panel" id="historyPanel">
+          <div class="history-head">
+            <span>History</span>
+            <button class="text-btn" id="historyClear">Clear</button>
+          </div>
+          <ul class="history-list" id="historyList">
+            <li class="history-empty" id="historyEmpty">No calculations yet</li>
+          </ul>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- ===================== % CHANGE TEMPLATE ===================== -->
+    <section class="panel template-panel" id="templatePanel" aria-hidden="true">
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="field-label" for="originalInput">Enter original value</label>
+          <input class="field-input" id="originalInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="finalInput">Enter final value</label>
+          <input class="field-input" id="finalInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="baseInput">Base <span class="field-sub">(resets to 100)</span></label>
+          <input class="field-input" id="baseInput" type="text" inputmode="decimal" autocomplete="off" value="100">
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">Difference <span class="stat-formula">original − final</span></div>
+          <div class="stat-value" id="diffValue">0</div>
+        </div>
+
+        <div class="stat-card stat-card--result">
+          <div class="stat-label" id="resultLabel">% Change <span class="stat-formula" id="resultFormula">((original − final) / original) × base</span></div>
+          <div class="result-row">
+            <div class="stat-value stat-value--big" id="resultValue" title="Ctrl+C to copy">0</div>
+            <button class="copy-btn" id="copyBtn" type="button" title="Ctrl+C">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="8.5" y="8.5" width="11" height="11" rx="2"/>
+                <path d="M4.5 15.5V6.2A1.7 1.7 0 0 1 6.2 4.5h9.3"/>
+              </svg>
+              <span id="copyLabel">Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <p class="reset-hint">Enter moves to the next field · Esc clears · Base resets to 100 on refresh</p>
+
+    </section>
+
+  </div>
+
+<script src="script.js"></script>
+</body>
+</html>
