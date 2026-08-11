@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modest Calculator</title>
+<title>Modest Calculator - % Change</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234f6bfb'/%3E%3Crect x='16' y='12' width='32' height='40' rx='6' fill='white' opacity='.95'/%3E%3Crect x='20' y='18' width='24' height='10' rx='3' fill='%234f6bfb'/%3E%3Ccircle cx='24' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='32' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='40' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='24' cy='44' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='32' cy='44' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='40' cy='44' r='3' fill='%234f6bfb'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -39,12 +39,6 @@
         <span class="brand-name">Modest Calculator</span>
       </div>
 
-      <nav class="mode-switch" role="tablist" aria-label="Calculator mode">
-        <button class="mode-btn is-active" data-mode="calc" role="tab" aria-selected="true">Calculator</button>
-        <button class="mode-btn" data-mode="template" role="tab" aria-selected="false">% Change</button>
-        <span class="mode-thumb" aria-hidden="true"></span>
-      </nav>
-
       <div class="header-actions">
         <button class="theme-toggle" id="themeToggle" aria-pressed="false" aria-label="Toggle dark mode (Ctrl+D)">
           <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -59,49 +53,8 @@
       </div>
     </header>
 
-    <!-- ===================== STANDARD CALCULATOR ===================== -->
-    <section class="panel calc-panel is-active" id="calcPanel" aria-hidden="false">
-      <div class="calc-body">
-        <div class="calc-core">
-          <div class="display">
-            <div class="display-expr" id="calcExpr">&nbsp;</div>
-            <div class="display-value" id="calcValue" title="Ctrl+C to copy">0</div>
-          </div>
-
-          <div class="keys">
-            <button class="key key-fn" data-action="ce" title="Backspace clears entry, Esc clears all">CE</button>
-            <button class="key key-fn" data-action="clear" title="Esc / Ctrl+L">C</button>
-            <button class="key key-fn" data-action="backspace" title="Backspace">⌫</button>
-            <button class="key key-fn" data-action="percent" title="%">%</button>
-
-            <button class="key key-num" data-num="7" title="Key: 7">7</button>
-            <button class="key key-num" data-num="8" title="Key: 8">8</button>
-            <button class="key key-num" data-num="9" title="Key: 9">9</button>
-            <button class="key key-op key-op--div" data-action="op" data-op="÷" title="Key: /">÷</button>
-
-            <button class="key key-num" data-num="4" title="Key: 4">4</button>
-            <button class="key key-num" data-num="5" title="Key: 5">5</button>
-            <button class="key key-num" data-num="6" title="Key: 6">6</button>
-            <button class="key key-op key-op--mul" data-action="op" data-op="×" title="Key: *">×</button>
-
-            <button class="key key-num" data-num="1" title="Key: 1">1</button>
-            <button class="key key-num" data-num="2" title="Key: 2">2</button>
-            <button class="key key-num" data-num="3" title="Key: 3">3</button>
-            <button class="key key-op key-op--sub" data-action="op" data-op="−" title="Key: -">−</button>
-
-            <button class="key key-fn" data-action="negate" title="+/-">+/-</button>
-            <button class="key key-num" data-num="0" title="Key: 0">0</button>
-            <button class="key key-num" data-action="decimal" title="Key: .">.</button>
-            <button class="key key-op key-op--add" data-action="op" data-op="+" title="Key: +">+</button>
-
-            <button class="key key-eq" data-action="equals" title="Enter">=</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ===================== % CHANGE TEMPLATE ===================== -->
-    <section class="panel template-panel" id="templatePanel" aria-hidden="true">
+    <section class="template-panel" id="templatePanel">
 
       <div class="field-grid">
         <div class="field field--original">
@@ -157,6 +110,11 @@
 
     </section>
 
+  </div>
+
+  <!-- Scrolling Ticker Container -->
+  <div class="ticker-container" aria-hidden="true">
+    <div class="ticker-text" id="newsTicker"></div>
   </div>
 
   <!-- Toast Notification -->
