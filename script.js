@@ -13,7 +13,7 @@
     
     // Map speed levels 1-5 to CSS animation duration in seconds
     const speedMap = {
-      1: "25s",
+      1: "30s",
       2: "20s",
       3: "15s",
       4: "10s",
