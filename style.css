@@ -5,29 +5,19 @@
   --card: #ffffff;
   --card-2: #f6f7fb;
   --key: #f4f5fa;
-  --key-hover: #eceefa;
-  --key-active: #dfe2f2;
   --text: #1b1d24;
   --text-muted: #5c6170;
   --border: rgba(20,22,30,0.09);
   --accent: #4f6bfb;
-  --accent-hover: #3f59e0;
-  --accent-soft: rgba(79,107,251,0.11);
   --accent-2: #8b5cf6;
   --accent-3: #ec4899;
+  --accent-soft: rgba(79,107,251,0.11);
   --danger: #e0577a;
   --danger-soft: rgba(224,87,122,0.12);
   --positive: #17a563;
   --positive-soft: rgba(23,165,99,0.12);
   --op-add: #4f6bfb;
-  --op-add-soft: rgba(79,107,251,0.12);
-  --op-sub: #ec4899;
-  --op-sub-soft: rgba(236,72,153,0.12);
   --op-mul: #8b5cf6;
-  --op-mul-soft: rgba(139,92,246,0.12);
-  --op-div: #17a5a0;
-  --op-div-soft: rgba(23,165,160,0.12);
-  --key-shadow: 0 1px 0 rgba(20,22,30,0.03), 0 4px 12px -6px rgba(20,22,30,0.14);
   --key-shadow-hover: 0 3px 0 rgba(20,22,30,0.02), 0 10px 20px -8px rgba(20,22,30,0.2);
   --shadow: 0 40px 80px -24px rgba(60,40,120,0.18), 0 14px 30px -14px rgba(60,40,120,0.1);
   --focus-ring: 0 0 0 3px rgba(79,107,251,0.35);
@@ -41,29 +31,19 @@
   --card: #181b26;
   --card-2: #1f2230;
   --key: #232637;
-  --key-hover: #2a2e42;
-  --key-active: #333850;
   --text: #f2f3f7;
   --text-muted: #a2a7ba;
   --border: rgba(255,255,255,0.08);
   --accent: #7c90ff;
-  --accent-hover: #91a2ff;
-  --accent-soft: rgba(124,144,255,0.18);
   --accent-2: #a78bfa;
   --accent-3: #f472b6;
+  --accent-soft: rgba(124,144,255,0.18);
   --danger: #ff86a3;
   --danger-soft: rgba(255,134,163,0.16);
   --positive: #4ad393;
   --positive-soft: rgba(74,211,147,0.16);
   --op-add: #7c90ff;
-  --op-add-soft: rgba(124,144,255,0.18);
-  --op-sub: #f472b6;
-  --op-sub-soft: rgba(244,114,182,0.18);
   --op-mul: #a78bfa;
-  --op-mul-soft: rgba(167,139,250,0.18);
-  --op-div: #2dd4c8;
-  --op-div-soft: rgba(45,212,200,0.18);
-  --key-shadow: 0 1px 0 rgba(255,255,255,0.02), 0 4px 14px -6px rgba(0,0,0,0.5);
   --key-shadow-hover: 0 3px 0 rgba(255,255,255,0.02), 0 12px 22px -8px rgba(0,0,0,0.55);
   --shadow: 0 40px 80px -24px rgba(0,0,0,0.6), 0 14px 30px -14px rgba(0,0,0,0.45);
   --focus-ring: 0 0 0 3px rgba(124,144,255,0.4);
@@ -133,7 +113,7 @@ button{ font-family: inherit; }
 }
 
 /* ============================================================
-   App shell — 1050px sweet spot (Compressed for laptops)
+   App shell
    ============================================================ */
 .app{
   position: relative;
@@ -155,15 +135,14 @@ button{ font-family: inherit; }
 }
 
 .app-header{
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
-  gap: 20px;
+  justify-content: space-between;
   margin-bottom: 20px;
 }
 
 /* ---- brand ---- */
-.brand{ justify-self: start; display: flex; align-items: center; gap: 12px; }
+.brand{ display: flex; align-items: center; gap: 12px; }
 .brand-mark{
   display: flex; align-items: center; justify-content: center;
   width: 36px; height: 36px;
@@ -176,44 +155,9 @@ button{ font-family: inherit; }
 .brand-mark svg{ width: 20px; height: 20px; }
 .brand-name{ font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
 
-/* ---- mode switch (centered) ---- */
-.mode-switch{
-  justify-self: center;
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 230px;
-  background: var(--key);
-  border-radius: 14px;
-  padding: 3px;
-}
-
-.mode-thumb{
-  position: absolute;
-  top: 3px; left: 3px;
-  width: calc(50% - 3px);
-  height: calc(100% - 6px);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  border-radius: 11px;
-  box-shadow: 0 6px 12px -4px rgba(79,107,251,0.45);
-  transition: transform .32s cubic-bezier(.22,1,.36,1);
-  z-index: 0;
-}
-
-.mode-switch[data-active="template"] .mode-thumb{ transform: translateX(calc(224px - 6px)); }
-
-.mode-btn{
-  position: relative; z-index: 1;
-  border: none; background: transparent;
-  color: var(--text-muted);
-  font-size: 13px; font-weight: 600; letter-spacing: .01em;
-  padding: 8px 6px; border-radius: 11px; cursor: pointer;
-  transition: color .2s ease;
-}
-.mode-btn.is-active{ color: #fff; }
 
 /* ---- header actions ---- */
-.header-actions{ justify-self: end; display: flex; align-items: center; gap: 10px; }
+.header-actions{ display: flex; align-items: center; gap: 10px; }
 
 .theme-toggle{
   display: flex; align-items: center; gap: 8px;
@@ -247,66 +191,7 @@ button:focus-visible,
 }
 .field-input:focus-visible{ border-color: var(--accent); }
 
-/* ============================================================
-   Panels
-   ============================================================ */
-.panel{ display: none; }
-.panel.is-active{ display: block; animation: panelIn .35s cubic-bezier(.22,1,.36,1); }
-
-@keyframes panelIn{
-  from{ opacity: 0; transform: translateY(6px); }
-  to{ opacity: 1; transform: translateY(0); }
-}
-
-/* ---- calculator layout ---- */
-.calc-body{
-  max-width: 590px;
-  margin: 0 auto;
-}
-
-.calc-core{ min-width: 0; }
-
-/* ---- display ---- */
-.display{
-  background: linear-gradient(160deg, var(--card-2), var(--card-2));
-  border-radius: 20px;
-  padding: 22px 24px 18px;
-  margin-bottom: 16px;
-  text-align: right;
-  min-height: 115px;
-  display: flex; flex-direction: column; justify-content: flex-end;
-  border: 1px solid var(--border);
-}
-
-.display-expr{
-  font-size: 15px;
-  color: var(--text-muted);
-  min-height: 20px;
-  font-variant-numeric: tabular-nums;
-  overflow-x: auto;
-  white-space: nowrap;
-  scrollbar-width: none;
-  margin-bottom: 4px;
-}
-.display-expr::-webkit-scrollbar{ display: none; }
-
-.display-value{
-  font-size: 58px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
-  word-break: break-all;
-  cursor: default;
-  transition: font-size .12s ease;
-}
-.display-value.shrink-1{ font-size: 44px; }
-.display-value.shrink-2{ font-size: 34px; }
-.display-value.shrink-3{ font-size: 26px; }
-.display-value.is-error{ font-size: 26px; color: var(--danger); font-weight: 700; }
-
-/* Number smooth transition animation (200ms) */
+/* Number smooth transition animation */
 .animate-update {
   animation: valueUpdate 200ms cubic-bezier(.22,1,.36,1);
 }
@@ -314,57 +199,6 @@ button:focus-visible,
   0% { transform: scale(0.98); opacity: 0.8; }
   100% { transform: scale(1); opacity: 1; }
 }
-
-/* ---- keypad ---- */
-.keys{
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.key{
-  border: none;
-  border-radius: 18px;
-  background: var(--key);
-  color: var(--text);
-  font-size: 22px;
-  font-weight: 500;
-  height: 64px;
-  cursor: pointer;
-  box-shadow: var(--key-shadow);
-  transition: background-color .12s ease, transform .12s cubic-bezier(.22,1,.36,1), box-shadow .18s ease;
-}
-.key:hover{ background: var(--key-hover); box-shadow: var(--key-shadow-hover); transform: translateY(-2px); }
-.key:active{ background: var(--key-active); transform: translateY(0) scale(.96); box-shadow: var(--key-shadow); }
-
-.key-fn{ color: var(--accent-2); font-size: 16px; font-weight: 700; letter-spacing: .01em; }
-
-.key-op{
-  font-size: 24px;
-  font-weight: 600;
-}
-.key-op--add{ background: var(--op-add-soft); color: var(--op-add); }
-.key-op--sub{ background: var(--op-sub-soft); color: var(--op-sub); }
-.key-op--mul{ background: var(--op-mul-soft); color: var(--op-mul); }
-.key-op--div{ background: var(--op-div-soft); color: var(--op-div); }
-.key-op:hover{ filter: brightness(1.06); }
-.key-op.is-selected{ color: #fff; }
-.key-op--add.is-selected{ background: var(--op-add); }
-.key-op--sub.is-selected{ background: var(--op-sub); }
-.key-op--mul.is-selected{ background: var(--op-mul); }
-.key-op--div.is-selected{ background: var(--op-div); }
-
-.key-eq{
-  grid-column: 1 / -1;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
-  font-size: 22px;
-  font-weight: 700;
-  height: 60px;
-  margin-top: 2px;
-  box-shadow: 0 10px 20px -10px rgba(79,107,251,0.55);
-}
-.key-eq:hover{ filter: brightness(1.06); transform: translateY(-2px); }
 
 /* ============================================================
    Template panel
@@ -509,7 +343,7 @@ button:focus-visible,
    ============================================================ */
 .toast{
   position: fixed;
-  bottom: 24px;
+  bottom: 50px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: var(--text);
@@ -527,6 +361,38 @@ button:focus-visible,
 .toast.is-visible{
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================================
+   Scrolling Ticker (Left to Right)
+   ============================================================ */
+.ticker-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+  overflow: hidden;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+[data-theme="dark"] .ticker-container { background: rgba(0, 0, 0, 0.2); }
+
+.ticker-text {
+  display: inline-block;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  /* Animation mapped via JS */
+}
+
+@keyframes ticker-ltr {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
 }
 
 @media (prefers-reduced-motion: reduce){
