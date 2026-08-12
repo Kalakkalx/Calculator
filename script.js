@@ -4,7 +4,7 @@
   /* ============================================================
      Ticker Configuration (Request 2)
      ============================================================ */
-  const CustomText = "FOLLOW @kalakkalx ON INSTAGRAM";
+  const CustomText = "PLEASE RECOMMEND MY WEBSITE TO YOUR FRIENDS";
   const TextSpeed = 1; // Choose a speed level from 1 (slowest) to 5 (fastest)
 
   const tickerEl = document.getElementById("newsTicker");
