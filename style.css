@@ -138,11 +138,11 @@ button{ font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 /* ---- brand ---- */
-.brand{ display: flex; align-items: center; gap: 12px; }
+.brand{ display: flex; align-items: center; gap: 12px; width: 220px; }
 .brand-mark{
   display: flex; align-items: center; justify-content: center;
   width: 36px; height: 36px;
@@ -155,9 +155,41 @@ button{ font-family: inherit; }
 .brand-mark svg{ width: 20px; height: 20px; }
 .brand-name{ font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
 
+/* ---- tabs (centered) ---- */
+.tabs-container {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+.tabs {
+  display: flex;
+  align-items: center;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .2s ease;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.is-active {
+  background: var(--accent-2); /* Matches the purple active pill */
+  color: #fff;
+  box-shadow: 0 4px 10px -2px rgba(139, 92, 246, 0.4);
+}
 
 /* ---- header actions ---- */
-.header-actions{ display: flex; align-items: center; gap: 10px; }
+.header-actions{ display: flex; align-items: center; justify-content: flex-end; gap: 10px; width: 220px; }
 
 .theme-toggle{
   display: flex; align-items: center; gap: 8px;
@@ -203,12 +235,25 @@ button:focus-visible,
 /* ============================================================
    Template panel
    ============================================================ */
+.template-panel {
+  display: none;
+}
+.template-panel.is-active {
+  display: block;
+  animation: fadeInPanel 0.3s cubic-bezier(.22,1,.36,1);
+}
+@keyframes fadeInPanel {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .field-grid{
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 16px;
 }
+.field-grid--3 { grid-template-columns: repeat(3, 1fr); }
+.field-grid--2 { grid-template-columns: repeat(2, 1fr); }
 
 .field{ position: relative; }
 
@@ -387,7 +432,6 @@ button:focus-visible,
   font-size: 14px;
   color: var(--text-muted);
   letter-spacing: 0.05em;
-  /* Animation mapped via JS */
 }
 
 @keyframes ticker-ltr {
