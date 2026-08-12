@@ -2,16 +2,15 @@
   "use strict";
 
   /* ============================================================
-     Ticker Configuration (Request 2)
+     Ticker Configuration
      ============================================================ */
-  const CustomText = "THANK YOU FOR RECOMMENDING";
-  const TextSpeed = 1; // Choose a speed level from 1 (slowest) to 5 (fastest)
+  const CustomText = "MESSAGE ME ON INSTAGRAM @kalakkalx FOR ANY IMPROVEMENT";
+  const TextSpeed = 1;
 
   const tickerEl = document.getElementById("newsTicker");
   if (tickerEl) {
     tickerEl.textContent = CustomText;
     
-    // Map speed levels 1-5 to CSS animation duration in seconds
     const speedMap = {
       1: "30s",
       2: "20s",
@@ -20,8 +19,6 @@
       5: "5s"
     };
     const animationDuration = speedMap[TextSpeed] || "15s";
-    
-    // Apply left-to-right animation
     tickerEl.style.animation = `ticker-ltr ${animationDuration} linear infinite`;
   }
 
@@ -30,6 +27,7 @@
      ============================================================ */
   const TEMPLATE_DECIMALS = 8;
   const DEFAULT_BASE = "100";
+  const DEFAULT_PERCENT = "8.9";
 
   function formatLive(raw) {
     if (raw === "" || raw === "-") return raw;
@@ -127,7 +125,6 @@
     localStorage.setItem("calc-theme", next);
   });
 
-  /* Keyboard shortcuts globally */
   window.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
       e.preventDefault();
@@ -137,21 +134,62 @@
 
 
   /* ============================================================
-     % Change template
+     Tab Switching Logic
+     ============================================================ */
+  const tabBtns = document.querySelectorAll(".tab-btn");
+  const panels = document.querySelectorAll(".template-panel");
+  let activeTabId = "changePanel"; // Default
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // Remove active from all
+      tabBtns.forEach(b => {
+        b.classList.remove("is-active");
+        b.setAttribute("aria-selected", "false");
+      });
+      panels.forEach(p => {
+        p.classList.remove("is-active");
+        p.hidden = true;
+      });
+
+      // Add active to selected
+      btn.classList.add("is-active");
+      btn.setAttribute("aria-selected", "true");
+      const targetId = btn.getAttribute("aria-controls");
+      const targetPanel = document.getElementById(targetId);
+      targetPanel.classList.add("is-active");
+      targetPanel.hidden = false;
+      
+      activeTabId = targetId;
+
+      // Focus first input of newly active panel
+      if (activeTabId === "changePanel") {
+        document.getElementById("originalInput").focus();
+      } else {
+        document.getElementById("deductionValueInput").focus();
+      }
+    });
+  });
+
+
+  /* ============================================================
+     % Change Calculator Logic
      ============================================================ */
   const originalInput = document.getElementById("originalInput");
   const finalInput = document.getElementById("finalInput");
   const baseInput = document.getElementById("baseInput");
   const baseHint = document.getElementById("baseHint");
+  
   const diffValue = document.getElementById("diffValue");
   const diffCopyBtn = document.getElementById("diffCopyBtn");
-  const resultValue = document.getElementById("resultValue");
-  const resultLabel = document.getElementById("resultLabel");
-  const resultFormula = document.getElementById("resultFormula");
+  
+  const changeResultValue = document.getElementById("changeResultValue");
+  const changeResultLabel = document.getElementById("changeResultLabel");
+  const changeResultFormula = document.getElementById("changeResultFormula");
   const statusBadge = document.getElementById("statusBadge");
-  const copyBtn = document.getElementById("copyBtn");
+  const changeCopyBtn = document.getElementById("changeCopyBtn");
 
-  let resultRawText = "";
+  let changeResultRawText = "";
   let diffRawText = "";
 
   function formatFieldLive(el, allowNegative = true) {
@@ -196,23 +234,23 @@
     baseHint.classList.toggle("is-warning", warn);
     baseInput.classList.toggle("is-invalid", warn);
 
-    resultLabel.firstChild.textContent = baseValid === 100 ? "% Change " : "Result ";
-    resultFormula.textContent = baseValid === 100
+    changeResultLabel.firstChild.textContent = baseValid === 100 ? "% Change " : "Result ";
+    changeResultFormula.textContent = baseValid === 100
       ? "((original − final) / original) × 100"
       : `((original − final) / original) × ${fmtDisplay(baseValid)}`;
 
     if (isNaN(original) || isNaN(final)) {
       diffValue.textContent = "—";
-      resultValue.textContent = "—";
-      resultValue.classList.remove("is-negative", "is-positive");
+      changeResultValue.textContent = "—";
+      changeResultValue.classList.remove("is-negative", "is-positive");
       statusBadge.hidden = true;
-      resultRawText = "";
+      changeResultRawText = "";
       diffRawText = "";
-      copyBtn.disabled = true;
+      changeCopyBtn.disabled = true;
       return;
     }
 
-    copyBtn.disabled = false;
+    changeCopyBtn.disabled = false;
     const diff = original - final;
     diffValue.textContent = fmtDisplay(diff, 10);
     diffValue.classList.toggle("is-negative", diff < 0);
@@ -220,25 +258,25 @@
     diffRawText = fmtPlain(diff, 10);
 
     if (original === 0) {
-      resultValue.textContent = "Undefined";
-      resultValue.classList.remove("is-negative", "is-positive");
+      changeResultValue.textContent = "Undefined";
+      changeResultValue.classList.remove("is-negative", "is-positive");
       statusBadge.hidden = true;
-      resultRawText = "";
-      copyBtn.disabled = true;
+      changeResultRawText = "";
+      changeCopyBtn.disabled = true;
       return;
     }
 
     const percentage = ((original - final) / original) * baseValid;
     const displayText = percentage.toLocaleString(undefined, { maximumFractionDigits: TEMPLATE_DECIMALS });
-    resultRawText = fmtPlain(percentage, TEMPLATE_DECIMALS);
+    changeResultRawText = fmtPlain(percentage, TEMPLATE_DECIMALS);
 
-    if (resultValue.textContent !== displayText) {
-      resultValue.textContent = displayText;
-      triggerUpdateAnimation(resultValue);
+    if (changeResultValue.textContent !== displayText) {
+      changeResultValue.textContent = displayText;
+      triggerUpdateAnimation(changeResultValue);
     }
-    resultValue.classList.toggle("is-negative", percentage < 0);
-    resultValue.classList.toggle("is-positive", percentage > 0);
-    applyShrink(resultValue);
+    changeResultValue.classList.toggle("is-negative", percentage < 0);
+    changeResultValue.classList.toggle("is-positive", percentage > 0);
+    applyShrink(changeResultValue);
 
     statusBadge.hidden = false;
     statusBadge.classList.remove("is-increase", "is-decrease", "is-same");
@@ -272,7 +310,7 @@
     if (e.key === "Enter") { e.preventDefault(); baseInput.blur(); }
   });
 
-  function resetTemplate() {
+  function resetChangeTemplate() {
     originalInput.value = "";
     finalInput.value = "";
     baseInput.value = DEFAULT_BASE;
@@ -280,32 +318,11 @@
     originalInput.focus();
   }
 
-  window.addEventListener("keydown", (e) => {
-    const activeIsInput = document.activeElement && document.activeElement.tagName === "INPUT";
-
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a" && activeIsInput) {
-      e.preventDefault();
-      document.activeElement.select();
-      return;
-    }
-
-    if (e.key === "Escape") { resetTemplate(); return; }
-
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c" && !activeIsInput) {
-      if (resultRawText) {
-        e.preventDefault();
-        copyText(resultRawText);
-        showToast("Copied % change result");
-        triggerUpdateAnimation(resultValue);
-      }
-    }
-  });
-
-  copyBtn.addEventListener("click", async () => {
-    if (!resultRawText) return;
-    await copyText(resultRawText);
+  changeCopyBtn.addEventListener("click", async () => {
+    if (!changeResultRawText) return;
+    await copyText(changeResultRawText);
     showToast("Copied % change result");
-    triggerUpdateAnimation(resultValue);
+    triggerUpdateAnimation(changeResultValue);
   });
 
   diffCopyBtn.addEventListener("click", async () => {
@@ -317,4 +334,150 @@
 
   baseInput.value = DEFAULT_BASE;
   computeChange();
+
+
+  /* ============================================================
+     Percentage% Deduction Calculator Logic
+     ============================================================ */
+  const deductionValueInput = document.getElementById("deductionValueInput");
+  const deductionPercentInput = document.getElementById("deductionPercentInput");
+  const deductionPercentHint = document.getElementById("deductionPercentHint");
+  
+  const deductionAmountValue = document.getElementById("deductionAmountValue");
+  const deductionAmountCopyBtn = document.getElementById("deductionAmountCopyBtn");
+  
+  const deductionResultValue = document.getElementById("deductionResultValue");
+  const deductionCopyBtn = document.getElementById("deductionCopyBtn");
+
+  let deductionResultRawText = "";
+  let deductionAmountRawText = "";
+
+  function computeDeduction() {
+    const originalValue = fieldNumber(deductionValueInput);
+
+    const pctTrim = deductionPercentInput.value.trim();
+    const pctNum = fieldNumber(deductionPercentInput);
+    let pctValid = 8.9, hint = "", warn = false;
+    
+    if (pctTrim === "" || isNaN(pctNum)) {
+      if (pctTrim !== "") {
+        deductionPercentInput.value = DEFAULT_PERCENT;
+        hint = "Invalid % — reset to 8.9";
+        warn = true;
+      } else {
+        hint = "Using default 8.9%";
+      }
+    } else {
+      pctValid = pctNum;
+    }
+    
+    deductionPercentHint.textContent = hint;
+    deductionPercentHint.classList.toggle("is-warning", warn);
+    deductionPercentInput.classList.toggle("is-invalid", warn);
+
+    if (isNaN(originalValue)) {
+      deductionAmountValue.textContent = "—";
+      deductionResultValue.textContent = "—";
+      deductionResultValue.classList.remove("is-negative", "is-positive");
+      deductionResultRawText = "";
+      deductionAmountRawText = "";
+      deductionCopyBtn.disabled = true;
+      return;
+    }
+
+    deductionCopyBtn.disabled = false;
+    
+    const deduction = originalValue * (pctValid / 100);
+    const finalResult = originalValue - deduction;
+
+    deductionAmountValue.textContent = fmtDisplay(deduction, 10);
+    deductionAmountRawText = fmtPlain(deduction, 10);
+
+    const displayText = finalResult.toLocaleString(undefined, { maximumFractionDigits: TEMPLATE_DECIMALS });
+    deductionResultRawText = fmtPlain(finalResult, TEMPLATE_DECIMALS);
+
+    if (deductionResultValue.textContent !== displayText) {
+      deductionResultValue.textContent = displayText;
+      triggerUpdateAnimation(deductionResultValue);
+    }
+    
+    deductionResultValue.classList.toggle("is-negative", finalResult < 0);
+    applyShrink(deductionResultValue);
+  }
+
+  deductionValueInput.addEventListener("input", () => { formatFieldLive(deductionValueInput); computeDeduction(); });
+  deductionPercentInput.addEventListener("input", () => { formatFieldLive(deductionPercentInput, false); computeDeduction(); });
+
+  [deductionValueInput, deductionPercentInput].forEach((el) => {
+    el.addEventListener("focus", () => el.select());
+  });
+
+  deductionValueInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); deductionPercentInput.focus(); }
+  });
+  deductionPercentInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); deductionPercentInput.blur(); }
+  });
+
+  function resetDeductionTemplate() {
+    deductionValueInput.value = "";
+    deductionPercentInput.value = DEFAULT_PERCENT;
+    computeDeduction();
+    deductionValueInput.focus();
+  }
+
+  deductionCopyBtn.addEventListener("click", async () => {
+    if (!deductionResultRawText) return;
+    await copyText(deductionResultRawText);
+    showToast("Copied final result");
+    triggerUpdateAnimation(deductionResultValue);
+  });
+
+  deductionAmountCopyBtn.addEventListener("click", async () => {
+    if (!deductionAmountRawText) return;
+    await copyText(deductionAmountRawText);
+    showToast("Copied deduction amount");
+    triggerUpdateAnimation(deductionAmountValue);
+  });
+
+  deductionPercentInput.value = DEFAULT_PERCENT;
+  computeDeduction();
+
+
+  /* ============================================================
+     Global Keyboard Shortcuts
+     ============================================================ */
+  window.addEventListener("keydown", (e) => {
+    const activeIsInput = document.activeElement && document.activeElement.tagName === "INPUT";
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a" && activeIsInput) {
+      e.preventDefault();
+      document.activeElement.select();
+      return;
+    }
+
+    if (e.key === "Escape") { 
+      if (activeTabId === "changePanel") {
+        resetChangeTemplate();
+      } else {
+        resetDeductionTemplate();
+      }
+      return; 
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c" && !activeIsInput) {
+      if (activeTabId === "changePanel" && changeResultRawText) {
+        e.preventDefault();
+        copyText(changeResultRawText);
+        showToast("Copied % change result");
+        triggerUpdateAnimation(changeResultValue);
+      } else if (activeTabId === "deductionPanel" && deductionResultRawText) {
+        e.preventDefault();
+        copyText(deductionResultRawText);
+        showToast("Copied final result");
+        triggerUpdateAnimation(deductionResultValue);
+      }
+    }
+  });
+
 })();
