@@ -4,7 +4,7 @@
   /* ============================================================
      Ticker Configuration
      ============================================================ */
-  const CustomText = "MESSAGE ME ON INSTAGRAM @kalakkalx FOR ANY IMPROVEMENT";
+  const CustomText = "FOLLOW ME INSTAGRAM @kalakkalx";
   const TextSpeed = 1;
 
   const tickerEl = document.getElementById("newsTicker");
@@ -18,7 +18,7 @@
       4: "10s",
       5: "5s"
     };
-    const animationDuration = speedMap[TextSpeed] || "15s";
+    const animationDuration = speedMap[TextSpeed] || "20s";
     tickerEl.style.animation = `ticker-ltr ${animationDuration} linear infinite`;
   }
 
