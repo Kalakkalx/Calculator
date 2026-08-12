@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modest Calculator - % Change</title>
+<title>Modest Calculator</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%234f6bfb'/%3E%3Crect x='16' y='12' width='32' height='40' rx='6' fill='white' opacity='.95'/%3E%3Crect x='20' y='18' width='24' height='10' rx='3' fill='%234f6bfb'/%3E%3Ccircle cx='24' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='32' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='40' cy='36' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='24' cy='44' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='32' cy='44' r='3' fill='%234f6bfb'/%3E%3Ccircle cx='40' cy='44' r='3' fill='%234f6bfb'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -39,6 +39,14 @@
         <span class="brand-name">Modest Calculator</span>
       </div>
 
+      <!-- Tab Switcher -->
+      <div class="tabs-container">
+        <div class="tabs" role="tablist">
+          <button class="tab-btn is-active" id="tab-change" role="tab" aria-selected="true" aria-controls="changePanel">% Change</button>
+          <button class="tab-btn" id="tab-deduction" role="tab" aria-selected="false" aria-controls="deductionPanel">Percentage%</button>
+        </div>
+      </div>
+
       <div class="header-actions">
         <button class="theme-toggle" id="themeToggle" aria-pressed="false" aria-label="Toggle dark mode (Ctrl+D)">
           <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -54,19 +62,16 @@
     </header>
 
     <!-- ===================== % CHANGE TEMPLATE ===================== -->
-    <section class="template-panel" id="templatePanel">
-
-      <div class="field-grid">
+    <section class="template-panel is-active" id="changePanel" role="tabpanel" aria-labelledby="tab-change">
+      <div class="field-grid field-grid--3">
         <div class="field field--original">
           <label class="field-label" for="originalInput">Enter original value</label>
           <input class="field-input" id="originalInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
         </div>
-
         <div class="field field--final">
           <label class="field-label" for="finalInput">Enter final value</label>
           <input class="field-input" id="finalInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
         </div>
-
         <div class="field field--base">
           <label class="field-label" for="baseInput">Base <span class="field-sub">(resets to 100)</span></label>
           <input class="field-input" id="baseInput" type="text" inputmode="decimal" autocomplete="off" value="100">
@@ -90,12 +95,12 @@
 
         <div class="stat-card stat-card--result">
           <div class="stat-label-row">
-            <div class="stat-label" id="resultLabel">% Change <span class="stat-formula" id="resultFormula">((original − final) / original) × base</span></div>
+            <div class="stat-label" id="changeResultLabel">% Change <span class="stat-formula" id="changeResultFormula">((original − final) / original) × base</span></div>
             <span class="status-badge" id="statusBadge" hidden></span>
           </div>
           <div class="result-row">
-            <div class="stat-value stat-value--big" id="resultValue" title="Ctrl+C to copy">0</div>
-            <button class="copy-btn" id="copyBtn" type="button" title="Ctrl+C">
+            <div class="stat-value stat-value--big" id="changeResultValue" title="Ctrl+C to copy">0</div>
+            <button class="copy-btn" id="changeCopyBtn" type="button" title="Ctrl+C">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <rect x="8.5" y="8.5" width="11" height="11" rx="2"/>
                 <path d="M4.5 15.5V6.2A1.7 1.7 0 0 1 6.2 4.5h9.3"/>
@@ -105,9 +110,54 @@
           </div>
         </div>
       </div>
-
       <p class="reset-hint">Enter moves to the next field · Esc clears · Base resets to 100 on refresh</p>
+    </section>
 
+    <!-- ===================== PERCENTAGE% DEDUCTION TEMPLATE ===================== -->
+    <section class="template-panel" id="deductionPanel" role="tabpanel" aria-labelledby="tab-deduction" hidden>
+      <div class="field-grid field-grid--2">
+        <div class="field field--original">
+          <label class="field-label" for="deductionValueInput">Enter value</label>
+          <input class="field-input" id="deductionValueInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+        </div>
+        <div class="field field--base">
+          <label class="field-label" for="deductionPercentInput">Percentage <span class="field-sub">(resets to 8.9%)</span></label>
+          <input class="field-input" id="deductionPercentInput" type="text" inputmode="decimal" autocomplete="off" value="8.9">
+          <div class="field-hint" id="deductionPercentHint"></div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">Deduction Amount <span class="stat-formula">value × (percentage / 100)</span></div>
+          <div class="result-row">
+            <div class="stat-value" id="deductionAmountValue" title="Ctrl+Shift+C to copy">0</div>
+            <button class="copy-btn copy-btn--sm" id="deductionAmountCopyBtn" type="button" title="Copy deduction">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="8.5" y="8.5" width="11" height="11" rx="2"/>
+                <path d="M4.5 15.5V6.2A1.7 1.7 0 0 1 6.2 4.5h9.3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="stat-card stat-card--result">
+          <div class="stat-label-row">
+            <div class="stat-label" id="deductionResultLabel">Final Result <span class="stat-formula">value − deduction amount</span></div>
+          </div>
+          <div class="result-row">
+            <div class="stat-value stat-value--big" id="deductionResultValue" title="Ctrl+C to copy">0</div>
+            <button class="copy-btn" id="deductionCopyBtn" type="button" title="Ctrl+C">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="8.5" y="8.5" width="11" height="11" rx="2"/>
+                <path d="M4.5 15.5V6.2A1.7 1.7 0 0 1 6.2 4.5h9.3"/>
+              </svg>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="reset-hint">Enter moves to the next field · Esc clears · Percentage resets to 8.9 on refresh</p>
     </section>
 
   </div>
