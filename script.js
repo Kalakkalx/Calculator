@@ -4,7 +4,7 @@
   /* ============================================================
      Ticker Configuration
      ============================================================ */
-  const CustomText = "THANKS FOR RECOMMENDING MY WEBSITE 💜";
+  const CustomText = "LEO MOVIE IN SUNTV 🤩";
   const TextSpeed = 1;
 
   const tickerEl = document.getElementById("newsTicker");
