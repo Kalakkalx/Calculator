@@ -4,7 +4,7 @@
   /* ============================================================
      Ticker Configuration
      ============================================================ */
-  const CustomText = "LEO MOVIE IN SUNTV 🤩";
+  const CustomText = "FOLLOW ME ON INSTAGRAM @kalakkalx";
   const TextSpeed = 1;
 
   const tickerEl = document.getElementById("newsTicker");
