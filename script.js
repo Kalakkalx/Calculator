@@ -18,7 +18,7 @@
       4: "10s",
       5: "5s"
     };
-    const animationDuration = speedMap[TextSpeed] || "20s";
+    const animationDuration = speedMap[TextSpeed] || "30s";
     tickerEl.style.animation = `ticker-ltr ${animationDuration} linear infinite`;
   }
 
