@@ -4,7 +4,7 @@
   /* ============================================================
      Ticker Configuration
      ============================================================ */
-  const CustomText = "FOLLOW ME ON INSTAGRAM @kalakkalx";
+  const CustomText = "IS THE WEBSITE OKAY?";
   const TextSpeed = 1;
 
   const tickerEl = document.getElementById("newsTicker");
